@@ -4,10 +4,39 @@
 #include "pch.h"
 #include "phiRNSample.h"
 #include "winrt/Microsoft.Windows.AI.Generative.h"
+#include <../../../codegen/NativePhiModuleSpec.g.h>
 
 #include "AutolinkedNativeModules.g.h"
 
 #include "NativeModules.h"
+
+using namespace winrt::Microsoft::Windows::AI::Generative;
+
+REACT_MODULE(PhiModule);
+struct PhiModule
+{
+    // The namespace here will align with the codegenConfig.windows.namespace property in your package.json
+    using ModuleSpec = phiRNSampleCodegen::PhiModuleSpec;
+
+    REACT_METHOD(GetPhiResponse, L"getPhiResponse");
+    void GetPhiResponse(std::string prompt, React::ReactPromise<std::string> response) noexcept
+    {
+        if (LanguageModel::IsAvailable()) {
+            auto createAsync = LanguageModel::CreateAsync();
+            createAsync.Completed([createAsync, response](auto asyncInfo, winrt::Windows::Foundation::AsyncStatus asyncStatus) {
+                auto languageModel = createAsync.get();
+                auto responseAsync = languageModel.GenerateResponseWithProgressAsync(L"Are you there");
+                responseAsync.Completed([responseAsync, response](auto asyncInfo, winrt::Windows::Foundation::AsyncStatus asyncStatus) {
+                    auto result = responseAsync.get().Response();
+                    return response.Resolve(winrt::to_string(result));
+                    });
+                });
+        } else {
+            return response.Resolve("Language Model Not Avail");
+        }
+        //return response.Resolve("Temp Response");
+    }
+};
 
 struct CompReactPackageProvider
     : winrt::implements<CompReactPackageProvider, winrt::Microsoft::ReactNative::IReactPackageProvider> {
@@ -150,6 +179,18 @@ _Use_decl_annotations_ int CALLBACK WinMain(HINSTANCE instance, HINSTANCE, PSTR 
   UpdateRootViewSizeToAppWindow(rootView, window);
 
   bridge.Show();
+
+  /*if (LanguageModel::IsAvailable()) {
+      auto createAsync = LanguageModel::CreateAsync();
+      createAsync.Completed([createAsync](auto asyncInfo, winrt::Windows::Foundation::AsyncStatus asyncStatus) {
+          auto languageModel = createAsync.get();
+          auto responseAsync = languageModel.GenerateResponseWithProgressAsync(L"Are you there");
+          responseAsync.Completed([responseAsync](auto asyncInfo, winrt::Windows::Foundation::AsyncStatus asyncStatus) {
+                   auto result = responseAsync.get();
+                   auto resultString = result.Response();
+              });
+          });
+  }*/
 
   // Run the main application event loop
   dispatcherQueueController.DispatcherQueue().RunEventLoop();

@@ -15,104 +15,93 @@ import {
   Text,
   useColorScheme,
   View,
+  TouchableHighlight,
+  TextInput,
 } from 'react-native';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+import PhiModule from './src/NativePhiModule';
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
-
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
 
 function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+  const [chatHistory, setChatHistory] = React.useState([{prompt: 'Welcome to the RN Phi Silica Sample. Please enter a prompt.', type: 'Response', key: 'tester'}]);
+  const [submittedPrompt, setSubmittedPrompt] = React.useState("");
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
+  type ChatEntryProps = {
+    prompt: string,
+    type: 'Prompt' | 'Response'
+  }
+  const ChatEntry = (props: ChatEntryProps) => {
+    return (
+      <View style={styles.chatEntry} key={props.prompt}>
+        <Text style={[styles.text, {fontWeight: 500, color: props.type == 'Prompt'? '#DDA0DD' : '#87CEEB', marginRight: 5}]}>{props.type}:</Text>
+        <Text style={styles.text}>{props.prompt}</Text>
+      </View>
+    );
+  }
+
+  const Chat = () => {
+    return (
+        chatHistory.map(chatEntry => (<ChatEntry prompt={chatEntry.prompt} type={chatEntry.type}/>))
+    );
+  }
 
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
+    <SafeAreaView style={styles.window}>
+      <ScrollView style={styles.chat}>
+        <Chat/>
       </ScrollView>
+      <View  style={styles.promptBar}>
+        <TextInput style={styles.typePrompt} placeholder='Type your prompt here' value={submittedPrompt} onChangeText={(text)=>{setSubmittedPrompt(text)}}/>
+        <TouchableHighlight style={styles.submitPrompt} onPress={()=>{
+          setChatHistory([...chatHistory, {prompt: submittedPrompt, type: 'Prompt', key: submittedPrompt}]);
+          if (PhiModule){
+            console.log("Running AI");
+            PhiModule.getPhiResponse(submittedPrompt).then(result => setChatHistory([...chatHistory,{prompt: submittedPrompt, type: 'Prompt', key: submittedPrompt}, {prompt: result, type: 'Response', key: result}]));
+          }else{
+            console.log("Module is Null");
+          }
+        }} underlayColor={'#E8E8E8'}>
+          <Text style={{fontSize: 18}}>Prompt</Text>
+        </TouchableHighlight>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  typePrompt: {
+    borderRadius: 5,
+    backgroundColor: '#E8E8E8',
+    padding: 10,
+    flexGrow: 1,
+    marginRight: 10,
+    fontSize: 18
   },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
+  submitPrompt: {
+    padding: 10,
+    borderRadius: 5,
+    borderColor: '#E8E8E8',
+    borderWidth: 2,
+    borderBottomWidth: 3
   },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
+  window: {
+    height: '100%',
+    width: '100%',
   },
-  highlight: {
-    fontWeight: '700',
+  chat: {
+    flexGrow: 1,
+    margin: 10,
   },
+  promptBar: {
+    margin: 10,
+    flexDirection: 'row'
+  },
+  text: {
+    fontSize: 18
+  },
+  chatEntry: {
+    flexDirection: 'row'
+  }
 });
 
 export default App;
