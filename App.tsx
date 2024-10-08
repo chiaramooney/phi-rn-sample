@@ -34,7 +34,7 @@ function App(): React.JSX.Element {
     return (
       <View style={styles.chatEntry} key={props.prompt}>
         <Text style={[styles.text, {fontWeight: 500, color: props.type == 'Prompt'? '#DDA0DD' : '#87CEEB', marginRight: 5}]}>{props.type}:</Text>
-        <Text style={styles.text}>{props.prompt}</Text>
+        <Text style={[styles.text, {flex: 1}]}>{props.prompt}</Text>
       </View>
     );
   }
@@ -97,10 +97,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row'
   },
   text: {
-    fontSize: 18
+    fontSize: 18,
+    flexWrap: 'wrap',
   },
   chatEntry: {
-    flexDirection: 'row'
+    flexDirection: 'row',
+    margin: 5,
   }
 });
 
