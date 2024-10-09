@@ -15,7 +15,6 @@ using namespace winrt::Microsoft::Windows::AI::Generative;
 REACT_MODULE(PhiModule);
 struct PhiModule
 {
-    // The namespace here will align with the codegenConfig.windows.namespace property in your package.json
     using ModuleSpec = phiRNSampleCodegen::PhiModuleSpec;
 
     REACT_METHOD(GetPhiResponse, L"getPhiResponse");
@@ -23,9 +22,9 @@ struct PhiModule
     {
         if (LanguageModel::IsAvailable()) {
             auto createAsync = LanguageModel::CreateAsync();
-            createAsync.Completed([createAsync, response](auto asyncInfo, winrt::Windows::Foundation::AsyncStatus asyncStatus) {
+            createAsync.Completed([createAsync, response, prompt](auto asyncInfo, winrt::Windows::Foundation::AsyncStatus asyncStatus) {
                 auto languageModel = createAsync.get();
-                auto responseAsync = languageModel.GenerateResponseWithProgressAsync(L"Are you there");
+                auto responseAsync = languageModel.GenerateResponseWithProgressAsync(winrt::to_hstring(prompt));
                 responseAsync.Completed([responseAsync, response](auto asyncInfo, winrt::Windows::Foundation::AsyncStatus asyncStatus) {
                     auto result = responseAsync.get().Response();
                     return response.Resolve(winrt::to_string(result));
@@ -34,7 +33,6 @@ struct PhiModule
         } else {
             return response.Resolve("Language Model Not Avail");
         }
-        //return response.Resolve("Temp Response");
     }
 };
 
@@ -179,18 +177,6 @@ _Use_decl_annotations_ int CALLBACK WinMain(HINSTANCE instance, HINSTANCE, PSTR 
   UpdateRootViewSizeToAppWindow(rootView, window);
 
   bridge.Show();
-
-  /*if (LanguageModel::IsAvailable()) {
-      auto createAsync = LanguageModel::CreateAsync();
-      createAsync.Completed([createAsync](auto asyncInfo, winrt::Windows::Foundation::AsyncStatus asyncStatus) {
-          auto languageModel = createAsync.get();
-          auto responseAsync = languageModel.GenerateResponseWithProgressAsync(L"Are you there");
-          responseAsync.Completed([responseAsync](auto asyncInfo, winrt::Windows::Foundation::AsyncStatus asyncStatus) {
-                   auto result = responseAsync.get();
-                   auto resultString = result.Response();
-              });
-          });
-  }*/
 
   // Run the main application event loop
   dispatcherQueueController.DispatcherQueue().RunEventLoop();
